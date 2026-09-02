@@ -4,7 +4,7 @@ Zynq-7000 FPGA 기반의 **3-Frame Difference 실시간 움직임 영역 검출 
 
 Pcam 5C Demo의 카메라 입력 및 기본 Video I/O 구조를 기반으로,  
 3개의 VDMA Read Channel을 이용한 Multi-Frame 구조와 Verilog RTL 기반 영상처리 Pipeline을 추가하여  
-**1920×1080 @ 30fps** 환경에서 움직임 영역을 실시간으로 검출하고 Bounding Box로 출력했습니다.
+**1920×1080 30fps** 환경에서 움직임 영역을 실시간으로 검출하고 Bounding Box로 출력했습니다.
 
 ---
 
@@ -23,7 +23,7 @@ Pcam 5C Demo의 카메라 입력 및 기본 Video I/O 구조를 기반으로,
 | Camera | Digilent Pcam 5C |
 | HDL | Verilog HDL |
 | Software | C |
-| Tool | Vivado / Vitis 2020.x |
+| Tool | Vivado / Vitis |
 | Interface | AXI4-Stream, AXI4-Lite, AXI VDMA |
 | Resolution | 1920 × 1080 |
 | Frame Rate | 30 fps |
