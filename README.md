@@ -235,8 +235,15 @@ Motion = (D1 > Threshold) OR (D2 > Threshold)
 
 
 
-https://github.com/user-attachments/assets/c2e5f8cb-9a1b-4aaa-86b9-44919a4b77a4
-ffmpeg -i demo.mp4 -c:v libx264 -crf 23 -preset medium -pix_fmt yuv420p -movflags +faststart -an demo_h264.mp4
+
+
+
+
+
+
+
+https://github.com/user-attachments/assets/9a3a67aa-2736-4b05-ba71-554f5b7c8f1a
+
 
 
 
