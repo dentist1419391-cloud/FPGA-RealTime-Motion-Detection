@@ -233,7 +233,11 @@ Motion = (D1 > Threshold) OR (D2 > Threshold)
 
 
 
-https://github.com/user-attachments/assets/1d77f6d4-5cd7-4e11-9726-611e7db78916
+
+
+https://github.com/user-attachments/assets/c2e5f8cb-9a1b-4aaa-86b9-44919a4b77a4
+
+
 
 
 
