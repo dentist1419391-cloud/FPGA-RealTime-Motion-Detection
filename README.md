@@ -231,9 +231,11 @@ Motion = (D1 > Threshold) OR (D2 > Threshold)
 - 움직임 영역 Bounding Box 실시간 출력
 - **150 MHz Timing Closure 달성**
 
-<p align="center">
-  <img src="docs/final_output.png" width="450">
-</p>
+
+
+https://github.com/user-attachments/assets/1d77f6d4-5cd7-4e11-9726-611e7db78916
+
+
 
 ---
 
