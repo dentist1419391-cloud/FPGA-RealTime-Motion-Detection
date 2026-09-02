@@ -19,7 +19,7 @@ Pcam 5C Demo의 Camera Input 및 기본 Video I/O 구조를 기반으로,
 | Software | C |
 | Tool | Vivado / Vitis 2020.1 |
 | Interface | AXI4-Stream, AXI4-Lite, AXI VDMA |
-| Resolution | 1920 × 1080 @ 30fps |
+| Resolution | 1920 × 1080 30fps |
 | Processing Clock | 150 MHz |
 
 ---
@@ -129,7 +129,7 @@ Motion = (D1 > Threshold) OR (D2 > Threshold)
 | Processing Clock | **150 MHz** |
 | Pipeline Latency | **14 clk / 93.3 ns** |
 | Throughput | **1 pixel/clk** |
-| Video Output | **1920×1080 @ 30fps** |
+| Video Output | **1920×1080 30fps** |
 | STA | **150 MHz Timing Closure 달성** |
 
 ---
@@ -237,17 +237,3 @@ Motion = (D1 > Threshold) OR (D2 > Threshold)
 
 ---
 
-## Repository
-
-```text
-FPGA-RealTime-Motion-Detection/
-├── README.md
-├── docs/
-└── rtl/
-    ├── rgb_to_gray/
-    ├── frame_difference/
-    ├── motion/
-    ├── morphology/
-    ├── box_calculation/
-    └── overlay/
-```
