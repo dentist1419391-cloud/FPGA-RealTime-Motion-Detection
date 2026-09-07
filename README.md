@@ -53,7 +53,7 @@ Pcam 5C Demo의 카메라 입력과 기본 Video I/O 구조를 활용하고,
 - Bounding Box 계산 및 Overlay
 - AXI4-Lite 기반 ROI Control Interface
 - 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조
-- Frame Delay / Genlock을 이용한 VDMA 프레임 동기화
+- Frame Delay / Genlock을 활용한 VDMA 프레임 동기화 구성
 - PS Software 기반 VDMA 프레임 동기화 검증
 - AXIS FIFO 기반 픽셀 정렬
 - VDMA 전송 경로의 HP Port 분산
@@ -89,7 +89,7 @@ Motion 영역이 유지되도록 구성했습니다.
 이후 Binary Motion Mask에 3×3 Erosion과 Dilation을 적용하고,
 ROI 내부 Motion Pixel의 최소 / 최대 좌표를 이용해 Bounding Box를 생성했습니다.
 
-### 영상처리 Pipeline
+### 영상처리 파이프라인
 
 ```text
 RGB
@@ -152,12 +152,12 @@ Overlay
 
 ---
 
-## 5. Latency / Throughput
+## 5. 처리 지연 / 처리량
 
 정상적인 `TVALID / TREADY` Handshake 상태에서
-영상처리 Pipeline은 **1 pixel/clk**로 데이터를 처리하도록 설계했습니다.
+영상처리 파이프라인은 **1 pixel/clk**로 데이터를 처리하도록 설계했습니다.
 
-| IP | 기능 | Latency | Throughput |
+| IP | 기능 | 지연 | 처리량 |
 |---|---|---:|---:|
 | RGB to Gray | RGB888 → 8-bit Gray | 1 clk | 1 pixel/clk |
 | Frame Difference | 프레임 간 Pixel 차분 | 1 clk | 1 pixel/clk |
@@ -173,8 +173,8 @@ Overlay
 | 항목 | 결과 |
 |---|---:|
 | 처리 클록 | **150 MHz** |
-| Pipeline Latency | **14 clk / 93.3 ns** |
-| Throughput | **1 pixel/clk** |
+| 파이프라인 지연 | **14 clk / 93.3 ns** |
+| 처리량 | **1 pixel/clk** |
 | 영상 출력 | **1920×1080 30fps** |
 | STA | **150 MHz Timing Closure** |
 
@@ -192,7 +192,7 @@ Overlay
 
 **분석**
 
-- 개별 영상처리 RTL을 ILA로 확인하여 정상 동작 검증
+- 개별 영상처리 RTL을 ILA로 관측하여 정상적인 데이터 전달 확인
 - 데이터 경로를 단계적으로 관측하여 지연 구간 추적
 - VDMA 데이터 공급 과정에서 Burst 사이 공백 확인
 - 1024 Sample 관측 구간에서 **85.6% Stream 전송률** 확인
@@ -270,16 +270,14 @@ Overlay
 
 ## 7. 시스템 검증
 
-### RTL / AXI4-Stream 검증
+### 시스템 통합 및 AXI4-Stream 검증
 
-Custom RTL의 기능을 RTL Simulation으로 검증한 뒤
-FPGA 시스템에 통합했습니다.
-
-통합 이후 Vivado ILA를 활용하여 다음 항목을 확인했습니다.
+영상처리 RTL을 FPGA 시스템에 통합한 뒤,
+Vivado ILA를 활용하여 실제 데이터 흐름과 인터페이스 동작을 검증했습니다.
 
 - `TVALID / TREADY` Handshake
 - 영상 데이터 흐름
-- Pipeline Latency
+- 파이프라인 지연
 - Backpressure 발생 상태
 - HP Port 분산 전후 Stream 전송 상태
 
@@ -295,7 +293,7 @@ PS Software를 통해 각 VDMA의 프레임 동작 상태를 확인하고,
 - 각 VDMA의 프레임 동작 상태 확인
 - Frame Delay 설정 확인
 - Genlock 동작 확인
-- 연속된 3개의 프레임이 영상처리 Pipeline에 공급되는지 검증
+- 연속된 3개의 프레임이 영상처리 파이프라인에 공급되는지 검증
 
 <p align="center">
   <img src="docs/vdma_sync_verification.png" width="650">
