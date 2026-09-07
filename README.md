@@ -11,9 +11,9 @@ Digilent Pcam 5C Demo의 Camera Input 및 기본 Video I/O 구조를 기반으�
 - AXI4-Stream 기반 3-Frame Difference 영상처리 RTL 설계
 - 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조 구성
 - AXI4-Lite 기반 ROI Control Interface 구성
-- PS Software 기반 VDMA Frame 동기화 검증
+- PS Software 기반 VDMA 프레임 동기화 검증
 - Vivado ILA 기반 데이터 흐름 및 Backpressure 분석
-- AXIS FIFO 기반 원본 영상과 처리 결과의 Pixel 정렬
+- AXIS FIFO 기반 원본 영상과 처리 결과의 픽셀 정렬
 - VDMA-DDR 전송 병목 분석 및 HP Port 분산
 - **1920×1080 30fps 실시간 영상 처리**
 - **150 MHz Timing Closure 달성**
@@ -43,10 +43,8 @@ Pcam 5C Demo의 Camera Input과 기본 Video I/O 구조를 활용하고,
 
 ### Reference Design 활용
 
-- Pcam 5C Camera 초기화 SW
-- MIPI CSI-2 기반 Camera Input
-- Demosaic, Gamma 등 기본 Video Input Pipeline
-- 기본 Video Output 구조
+- Pcam 5C Camera 초기화 및 MIPI CSI-2 기반 Video Input
+- Demosaic, Gamma 및 기본 Video Output 구조
 
 ### 직접 설계 및 구성
 
@@ -56,10 +54,10 @@ Pcam 5C Demo의 Camera Input과 기본 Video I/O 구조를 활용하고,
 - Bounding Box 계산 및 Overlay
 - AXI4-Lite 기반 ROI Control Interface
 - 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조
-- Frame Delay / Genlock을 이용한 VDMA Frame Synchronization
-- PS Software 기반 VDMA Frame 동기화 검증
-- AXIS FIFO 기반 Pixel 정렬
-- VDMA Memory Path의 HP Port 분산
+- Frame Delay / Genlock을 이용한 VDMA 프레임 동기화
+- PS Software 기반 VDMA 프레임 동기화 검증
+- AXIS FIFO 기반 픽셀 정렬
+- VDMA 전송 경로의 HP Port 분산
 - Vivado ILA 기반 데이터 흐름 및 Backpressure 분석
 - STA 기반 Timing 검증
 
@@ -67,7 +65,7 @@ Pcam 5C Demo의 Camera Input과 기본 Video I/O 구조를 활용하고,
 
 | 영역 | 역할 |
 |---|---|
-| **PS** | Pcam Demo 제공 SW 기반 Camera 초기화, VDMA 설정, Frame Delay / Genlock 설정, ROI 제어, VDMA Frame 동기화 검증 |
+| **PS** | Pcam Demo 제공 SW 기반 Camera 초기화, VDMA 설정, Frame Delay / Genlock 설정, ROI 제어, VDMA 프레임 동기화 검증 |
 | **PL** | AXI4-Stream 기반 영상처리 RTL, 3-Frame Difference, Morphology, Bounding Box, Overlay |
 
 ---
@@ -118,15 +116,15 @@ Overlay
 
 ## 4. 시스템 구조
 
-1080p 영상을 Frame 단위로 저장하고 처리하기 위해 DDR Frame Buffer를 사용했습니다.
+1080p 영상을 프레임 단위로 저장하고 처리하기 위해 DDR Frame Buffer를 사용했습니다.
 
-연속된 세 Frame을 영상처리 RTL에 동시에 공급하기 위해
+연속된 세 프레임을 영상처리 RTL에 동시에 공급하기 위해
 3개의 VDMA MM2S Read Channel을 구성했습니다.
 
 - VDMA0 → Frame N
 - VDMA1 → Frame N-1
 - VDMA2 → Frame N-2
-- Frame Delay / Genlock을 이용한 Frame Synchronization
+- Frame Delay / Genlock을 이용한 프레임 동기화
 - DDR Frame Buffer 기반 3-Frame 처리
 
 ### 3-VDMA Pipeline Architecture
@@ -163,7 +161,7 @@ Overlay
 | IP | 기능 | Latency | Throughput |
 |---|---|---:|---:|
 | RGB to Gray | RGB888 → 8-bit Gray | 1 clk | 1 pixel/clk |
-| Frame Difference | Frame 간 Pixel 차분 | 1 clk | 1 pixel/clk |
+| Frame Difference | 프레임 간 Pixel 차분 | 1 clk | 1 pixel/clk |
 | Threshold | Binary Motion Mask 생성 | 1 clk | 1 pixel/clk |
 | Motion Calculation | 두 Binary Mask OR 연산 | 1 clk | 1 pixel/clk |
 | Morphology | 3×3 Erosion → Dilation | 7 clk | 1 pixel/clk |
@@ -185,13 +183,13 @@ Overlay
 
 ## 6. 트러블슈팅
 
-### 6.1 3중 VDMA 구성 후 Memory 병목
+### 6.1 3중 VDMA 구성 후 메모리 병목
 
 **문제**
 
 - 2-Frame 구조를 3-Frame 구조로 변경한 뒤 영상 끊김 발생
 - 3개의 VDMA Read Channel이 단일 HP Port를 공유
-- 약 1.12 GB/s의 Read Traffic이 하나의 Memory Path에 집중
+- 단일 HP Port의 이론 대역폭은 약 **1.2 GB/s**, 요구 Read Traffic은 약 **1.12 GB/s**로 대역폭 여유가 크지 않은 구조
 
 **분석**
 
@@ -206,9 +204,8 @@ Overlay
 
 **해결**
 
-- 각 VDMA Memory Path를 **3개의 HP Port로 분산**
-- 단일 HP Port에 집중되던 Memory Traffic 분산
-- Arbitration에 따른 데이터 공급 지연 완화
+- 각 VDMA 전송 경로를 **3개의 HP Port로 분산**
+- 단일 HP Port의 대역폭 병목 완화
 
 **결과**
 
@@ -221,12 +218,12 @@ Overlay
 
 ---
 
-### 6.2 원본 영상과 처리 결과의 Pixel 정렬
+### 6.2 원본 영상과 처리 결과의 픽셀 정렬
 
 **문제**
 
 - 원본 RGB 경로와 영상처리 경로 사이에 서로 다른 처리 지연 존재
-- 초기에는 Shift Register 기반 **고정 지연**으로 Pixel 위치 정렬
+- 초기에는 Shift Register 기반 **고정 지연**으로 픽셀 위치 정렬
 - AXI4-Stream Backpressure 발생 시 추가적인 **가변 지연** 발생
 - 고정 지연만으로 원본 영상과 처리 결과의 안정적인 정렬이 어려움
 
@@ -244,7 +241,7 @@ Overlay
 
 - 원본 RGB 경로에 **AXIS FIFO 적용**
 - Overlay 단계에서 두 입력의 `TVALID / TREADY` Handshake를 기준으로 데이터 전달
-- Backpressure 발생 시 FIFO에서 원본 Pixel의 전달 시점 제어
+- Backpressure 발생 시 FIFO를 이용해 원본 Pixel의 전달 시점 제어
 
 **결과**
 
@@ -291,15 +288,15 @@ FPGA 시스템에 통합했습니다.
   <img src="docs/ila_pipeline_latency.png" width="800">
 </p>
 
-### VDMA Frame 동기화 검증
+### VDMA 프레임 동기화 검증
 
-PS Software를 통해 각 VDMA의 Frame 동작 상태를 확인하고,
-3개의 MM2S Channel이 의도한 Frame을 공급하는지 검증했습니다.
+PS Software를 통해 각 VDMA의 프레임 동작 상태를 확인하고,
+3개의 MM2S Channel이 의도한 프레임을 공급하는지 검증했습니다.
 
-- 각 VDMA의 Frame 동작 상태 확인
+- 각 VDMA의 프레임 동작 상태 확인
 - Frame Delay 설정 확인
 - Genlock 동작 확인
-- 연속된 3개의 Frame이 영상처리 Pipeline에 공급되는지 검증
+- 연속된 3개의 프레임이 영상처리 Pipeline에 공급되는지 검증
 
 <p align="center">
   <img src="docs/vdma_sync_verification.png" width="650">
@@ -311,8 +308,8 @@ PS Software를 통해 각 VDMA의 Frame 동작 상태를 확인하고,
 
 - AXI4-Stream 기반 3-Frame Difference 영상처리 RTL 설계
 - 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조 구성
-- PS Software 기반 VDMA Frame 동기화 검증
-- Backpressure 분석 및 AXIS FIFO 기반 Pixel 정렬
+- PS Software 기반 VDMA 프레임 동기화 검증
+- Backpressure 분석 및 AXIS FIFO 기반 픽셀 정렬
 - VDMA-DDR 전송 병목 분석 및 HP Port 분산
 - **1920×1080 30fps 실시간 Motion Detection**
 - **150 MHz Timing Closure**
