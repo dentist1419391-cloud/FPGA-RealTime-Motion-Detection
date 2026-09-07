@@ -2,7 +2,7 @@
 
 Zynq-7000 FPGA 기반 **3-Frame Difference 실시간 움직임 영역 검출 시스템**
 
-Digilent Pcam 5C Demo의 Camera Input 및 기본 Video I/O 구조를 기반으로,
+Digilent Pcam 5C Demo의 카메라 입력 및 기본 Video I/O 구조를 기반으로,
 **AXI4-Stream 기반 영상처리 RTL과 3개의 VDMA MM2S Read Channel을 이용한 3-Frame 처리 구조를 구성하고**
 1920×1080 30fps 영상에서 움직임 영역을 검출하여 Bounding Box로 출력했습니다.
 
@@ -38,13 +38,12 @@ Digilent Pcam 5C Demo의 Camera Input 및 기본 Video I/O 구조를 기반으�
 
 ## 2. 구현 범위
 
-Pcam 5C Demo의 Camera Input과 기본 Video I/O 구조를 활용하고,
+Pcam 5C Demo의 카메라 입력과 기본 Video I/O 구조를 활용하고,
 영상처리 RTL과 3-Frame 처리 구조를 직접 구성했습니다.
 
 ### Reference Design 활용
 
-- Pcam 5C Camera 초기화 및 MIPI CSI-2 기반 Video Input
-- Demosaic, Gamma 및 기본 Video Output 구조
+- Pcam 5C Camera 초기화 및 기본 Video Input / Output Pipeline
 
 ### 직접 설계 및 구성
 
