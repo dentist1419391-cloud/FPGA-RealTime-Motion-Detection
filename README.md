@@ -388,51 +388,6 @@ HP Port 분산 후 1920×1080 30fps 영상 출력 정상화
 
 ---
 
-### 6.2 원본 영상과 처리 결과의 픽셀 정렬
-
-**문제**
-
-- 원본 RGB 영상과 영상처리 결과를 결합하는 과정에서 Pixel 위치 불일치 발생
-
-<p align="center">
-  <img src="docs/pixel_alignment_architecture.png" width="700">
-</p>
-
-**분석**
-
-- 원본 RGB 경로와 영상처리 경로 사이에 서로 다른 처리 지연 존재
-- 초기에는 Shift Register 기반 고정 지연으로 Pixel 위치 정렬
-- Vivado ILA에서 `TVALID / TREADY` 신호를 관측한 결과, AXI4-Stream Backpressure 발생 시 영상처리 경로에 추가적인 가변 지연이 발생함을 확인
-- Backpressure에 따른 가변 지연을 처리하기 위해 고정 Delay 방식 대신 버퍼링 구조가 필요하다고 판단
-
-**해결**
-
-- 원본 RGB 경로의 Shift Register 기반 고정 지연 구조를 AXIS FIFO 기반 버퍼링 구조로 변경
-- Overlay 단계에서 두 입력의 `TVALID / TREADY` 상태를 고려해 데이터 전달
-- Backpressure 발생 시 FIFO를 통해 원본 Pixel의 전달 시점 제어
-
-**결과**
-
-- Backpressure 발생 상황에서도 원본 영상과 영상처리 결과의 Pixel Sequence 정렬 유지
-
----
-
-### 6.3 Morphology 경계 처리
-
-**문제**
-
-- 3×3 Morphology 연산 시 영상 가장자리에서 일부 이웃 Pixel 부재
-- 경계 Pixel을 제외하면 출력 영상 크기가 입력보다 작아짐
-
-**해결**
-
-- 영상 외부 Pixel 값을 `0`으로 처리하는 Zero Padding 적용
-- 영상 경계에서도 3×3 Window 연산 수행
-- 입력과 동일한 출력 해상도 유지
-
-<p align="center">
-  <img src="docs/morphology_zero_padding.png" width="300">
-</p>
 
 ### 6.2 원본 영상과 처리 결과의 픽셀 정렬
 
