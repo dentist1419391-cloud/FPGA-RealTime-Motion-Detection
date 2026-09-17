@@ -218,9 +218,9 @@ PS Software를 통해 각 VDMA의 프레임 동작 상태를 확인하고,
 
 ## 7. 트러블슈팅
 
-### 7.1 단일 HP0 공유에 따른 데이터 전송 병목
+### 7.1 단일 HP 포트 공유로 인한 메모리 대역폭 병목
 
-**문제 및 데이터 흐름 점검**
+#### 문제 및 데이터 흐름 점검
 
 2-Frame에서 3-Frame 처리 구조로 확장하면서
 VDMA MM2S Read Channel을 2개에서 3개로 늘렸습니다.
@@ -234,18 +234,20 @@ VDMA1 Read ─┼─ AXI Interconnect ─ HP0 ─ DDR
 VDMA2 Read ─┘
 ```
 
-Vivado ILA로 Pipeline을 단계적으로 확인한 결과,
+Vivado ILA로 영상처리 Pipeline을 단계적으로 확인한 결과,
 여러 AXI4-Stream 구간에서 데이터 전송 공백을 확인했습니다.
 
-아래는 Overlay 입력에서 관측한 대표 파형
+아래는 Overlay 입력에서 관측한 대표 파형입니다.
 
 <p align="center">
   <img src="docs/axis_handshake_with_stall.png" width="800">
 </p>
 
-**요구 대역폭 분석**
+---
 
-디스플레이 출력: **1920×1080 60Hz, RGB888**
+#### 요구 대역폭 분석
+
+**디스플레이 출력: 1920×1080 60Hz, RGB888**
 
 ```text
 1개의 Read Channel 요구 대역폭
@@ -268,31 +270,15 @@ HP Port 이론 대역폭 대비 요구량
 세 Read Channel의 합산 요구량이 단일 HP Port 이론 대역폭의 약 93.3%를 차지해,
 대역폭 여유가 크지 않은 구조임을 확인했습니다.
 
-**해결 및 결과**
+---
 
-세 VDMA Read Channel을 서로 다른 HP Port로 분산했습니다.
+#### HP0 실제 전송 대역폭 측정
 
-```text
-VDMA0 Read  ─ HP0
-VDMA1 Read  ─ HP1
-VDMA2 Read  ─ HP3
+실제 전송량을 확인하기 위해 HP0 Read Data Channel의
+`RVALID`, `RREADY`를 RTL Counter에 연결했습니다.
 
-VDMA0 Write ─ HP2
-```
-
-HP Port 분산 후 **1920×1080 30fps 영상 출력 정상화**
-
-동일한 Overlay 입력에서 캡처한 1,024 Cycle 구간에서
-연속적인 AXI4-Stream Handshake 확인
-
-<p align="center">
-  <img src="docs/axis_handshake_continuous.png" width="800">
-</p>
-
-**HP Read 전송량 측정**
-
-HP0 Read Data Channel의 `RVALID`, `RREADY`를 RTL Counter에 연결해
-1초 동안 실제 Read Data 전송 횟수를 측정했습니다.
+`RVALID && RREADY`가 성립한 Cycle을 1초 동안 Count하고,
+64-bit Data Width를 기준으로 실제 전송 대역폭을 계산했습니다.
 
 | 신호 | 의미 |
 |---|---|
@@ -303,16 +289,13 @@ HP0 Read Data Channel의 `RVALID`, `RREADY`를 RTL Counter에 연결해
 | `done` | 측정 완료 |
 | `handshake_count` | 1초 동안 발생한 Read Data 전송 횟수 |
 
-`RVALID && RREADY`가 성립한 Cycle의 비율을 **실제 전송률**로 계산하고,
-64-bit Data Width를 기준으로 **실제 전송 대역폭**을 환산했습니다.
-
-#### 단일 HP0 공유
-
-측정 구성
+##### 측정 구성
 
 <p align="center">
   <img src="docs/before_hp_split_measurement_setup.png" width="900">
 </p>
+
+##### 측정 결과
 
 ```text
 handshake_count = 138,561,478
@@ -340,21 +323,44 @@ handshake_count = 138,561,478
 차이        :    11.252 MB/s
 ```
 
-측정 결과
-
 <p align="center">
   <img src="docs/before_hp_split_vio.png" width="850">
 </p>
 
-#### HP Port 분산 후
+3개의 Read Channel이 요구하는 1,119.744 MB/s에 비해
+실제 측정 대역폭은 1,108.492 MB/s로 약 11.25 MB/s 부족했습니다.
 
-측정 구성
+ILA에서 확인한 AXI4-Stream 전송 공백과 대역폭 측정 결과를 바탕으로,
+세 Read Channel이 단일 HP0를 공유하면서 발생한 **메모리 대역폭 병목**으로 판단했습니다.
+
+---
+
+#### HP Port 분산
+
+세 VDMA Read Channel을 서로 다른 HP Port로 분산했습니다.
+
+```text
+VDMA0 Read  ─ HP0
+VDMA1 Read  ─ HP1
+VDMA2 Read  ─ HP3
+
+VDMA0 Write ─ HP2
+```
+
+---
+
+#### HP Port 분산 후 전송 대역폭 측정
+
+포트 분산 후 HP0에 연결된 VDMA0 Read Channel을
+동일한 방법으로 측정했습니다.
+
+##### 측정 구성
 
 <p align="center">
   <img src="docs/after_hp_split_measurement_setup.png" width="900">
 </p>
 
-HP0에 연결된 VDMA0 Read Channel을 동일한 방식으로 측정했습니다.
+##### 측정 결과
 
 ```text
 handshake_count = 46,656,000
@@ -381,11 +387,27 @@ handshake_count = 46,656,000
 측정 대역폭 : 373.248 MB/s
 ```
 
-측정 결과
-
 <p align="center">
   <img src="docs/after_hp_split_vio.png" width="850">
 </p>
+
+분산 후 HP0에서 측정된 373.248 MB/s는
+VDMA0 Read Channel의 요구 대역폭과 일치했습니다.
+
+---
+
+#### AXI4-Stream 전송 결과
+
+HP Port 분산 후 **1920×1080 30fps 영상 출력 정상화**
+
+동일한 Overlay 입력에서 캡처한 1,024 Cycle 구간에서
+연속적인 AXI4-Stream Handshake 확인
+
+<p align="center">
+  <img src="docs/axis_handshake_continuous.png" width="800">
+</p>
+
+---
 
 #### 구성별 비교
 
@@ -395,9 +417,8 @@ handshake_count = 46,656,000
 | 요구 대역폭 | 1.120 GB/s | 0.373 GB/s |
 | 실제 전송 대역폭 | 1.108 GB/s | 0.373 GB/s |
 | 실제 전송률 | 92.374% | 31.104% |
+| AXI4-Stream | 전송 공백 발생 | 연속 전송 확인 |
 | 영상 출력 | 미출력 | 정상 |
-
----
 
 ### 7.2 원본 영상과 처리 결과의 픽셀 정렬
 
