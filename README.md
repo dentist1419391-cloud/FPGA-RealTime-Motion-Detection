@@ -1,6 +1,6 @@
 # FPGA Real-Time Motion Detection System
 
-Zynq-7000 FPGA 기반 **3-Frame Difference 실시간 움직임 영역 검출 시스템**
+Zynq-7000 FPGA 기반 3-Frame Difference 실시간 움직임 영역 검출 시스템
 
 Digilent Pcam 5C Demo의 카메라 입력 및 기본 Video I/O 구조를 기반으로,
 AXI4-Stream 영상처리 RTL과 3개의 VDMA MM2S Read Channel을 이용한 3-Frame 처리 구조를 구성하고
@@ -226,7 +226,7 @@ HP Port 이론 대역폭 대비 요구량
 
 #### HP0 실제 전송 대역폭 측정
 
-**측정 방법**
+##### 측정 방법
 
 HP0 Read Data Channel의 `RVALID`, `RREADY`를 RTL Counter에 연결하고,
 `RVALID && RREADY`가 성립한 Cycle을 1초 동안 Count했습니다.
@@ -242,21 +242,27 @@ HP0 Read Data Channel의 `RVALID`, `RREADY`를 RTL Counter에 연결하고,
 | `done` | 측정 완료 |
 | `handshake_count` | 1초 동안 발생한 Read Data 전송 횟수 |
 
-**측정 결과**
+##### 측정 구성
+
+HP0의 `RVALID / RREADY`를 RTL Counter에 연결한 전송량 측정 구성
+
+<p align="center">
+  <img src="docs/before_hp_split_measurement_setup.png" height="300">
+</p>
+
+##### 측정 결과
+
+1초 동안의 `RVALID && RREADY` Handshake Count 확인
 
 ```text
 handshake_count = 138,561,478
 ```
 
 <p align="center">
-  <img src="docs/before_hp_split_measurement_setup.png" width="900">
+  <img src="docs/before_hp_split_vio.png" height="125">
 </p>
 
-<p align="center">
-  <img src="docs/before_hp_split_vio.png" width="850">
-</p>
-
-**측정 결과 분석**
+##### 측정 결과 분석
 
 실제 전송률
 
@@ -300,26 +306,32 @@ VDMA0 Write ─ HP2
 
 #### HP Port 분산 후 전송 대역폭 측정
 
-**측정 방법**
+##### 측정 방법
 
 HP0에 연결된 VDMA0 Read Channel을
 분리 전과 동일한 방법으로 1초 동안 측정했습니다.
 
-**측정 결과**
+##### 측정 구성
+
+HP Port 분산 후 HP0의 VDMA0 Read Channel 전송량 측정 구성
+
+<p align="center">
+  <img src="docs/after_hp_split_measurement_setup.png" height="300">
+</p>
+
+##### 측정 결과
+
+1초 동안의 `RVALID && RREADY` Handshake Count 확인
 
 ```text
 handshake_count = 46,656,000
 ```
 
 <p align="center">
-  <img src="docs/after_hp_split_measurement_setup.png" width="900">
+  <img src="docs/after_hp_split_vio.png" height="125">
 </p>
 
-<p align="center">
-  <img src="docs/after_hp_split_vio.png" width="850">
-</p>
-
-**측정 결과 분석**
+##### 측정 결과 분석
 
 실제 전송률
 
@@ -342,7 +354,7 @@ handshake_count = 46,656,000
 측정 대역폭 : 373.248 MB/s
 ```
 
-분산 후 HP0의 실제 전송 대역폭은
+분산 후 HP0에서 측정된 전송 대역폭은
 VDMA0 Read Channel의 요구 대역폭과 일치했습니다.
 
 #### AXI4-Stream 전송 결과
