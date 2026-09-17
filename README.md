@@ -176,7 +176,7 @@ Overlay
 
 ### 6.1 단일 HP0 공유에 따른 메모리 대역폭 병목
 
-#### 문제 및 데이터 흐름 점검
+#### 1. 문제 및 데이터 흐름 점검
 
 2-Frame에서 3-Frame 처리 구조로 확장하면서
 VDMA MM2S Read Channel을 2개에서 3개로 늘렸습니다.
@@ -199,7 +199,9 @@ Vivado ILA로 영상처리 Pipeline을 단계적으로 확인한 결과,
   <img src="docs/axis_handshake_with_stall.png" width="800">
 </p>
 
-#### 요구 대역폭 분석
+---
+
+#### 2. 요구 대역폭 분석
 
 디스플레이 출력: 1920×1080 60Hz, RGB888
 
@@ -224,7 +226,9 @@ HP Port 이론 대역폭 대비 요구량
 세 Read Channel의 합산 요구량이 단일 HP Port 이론 대역폭의 약 93.3%를 차지해,
 대역폭 여유가 크지 않은 구조임을 확인했습니다.
 
-#### HP0 실제 전송 대역폭 측정
+---
+
+#### 3. 단일 HP0 전송 대역폭 측정
 
 ##### 측정 방법
 
@@ -290,9 +294,11 @@ handshake_count = 138,561,478
 실제 측정 대역폭은 1,108.492 MB/s로 약 11.25 MB/s 부족했습니다.
 
 ILA에서 확인한 AXI4-Stream 전송 공백과 전송 대역폭 측정 결과를 바탕으로,
-세 Read Channel이 단일 HP0를 공유하면서 메모리 대역폭 병목이 발생한 것으로 판단했습니다.
+단일 HP0의 메모리 대역폭 병목으로 판단했습니다.
 
-#### HP Port 분산
+---
+
+#### 4. HP Port 분산
 
 세 VDMA Read Channel을 서로 다른 HP Port로 분산했습니다.
 
@@ -304,16 +310,13 @@ VDMA2 Read  ─ HP3
 VDMA0 Write ─ HP2
 ```
 
-#### HP Port 분산 후 전송 대역폭 측정
+---
 
-##### 측정 방법
-
-HP0에 연결된 VDMA0 Read Channel을
-분리 전과 동일한 방법으로 1초 동안 측정했습니다.
+#### 5. HP Port 분산 후 전송 대역폭 측정
 
 ##### 측정 구성
 
-HP Port 분산 후 HP0의 VDMA0 Read Channel 전송량 측정 구성
+HP Port 분산 후 HP0에 연결된 VDMA0 Read Channel의 전송량 측정 구성
 
 <p align="center">
   <img src="docs/after_hp_split_measurement_setup.png" height="300">
@@ -357,7 +360,9 @@ handshake_count = 46,656,000
 분산 후 HP0에서 측정된 전송 대역폭은
 VDMA0 Read Channel의 요구 대역폭과 일치했습니다.
 
-#### AXI4-Stream 전송 결과
+---
+
+#### 6. AXI4-Stream 전송 결과
 
 HP Port 분산 후 1920×1080 30fps 영상 출력 정상화
 
@@ -368,7 +373,9 @@ HP Port 분산 후 1920×1080 30fps 영상 출력 정상화
   <img src="docs/axis_handshake_continuous.png" width="800">
 </p>
 
-#### 구성별 비교
+---
+
+#### 7. 구성별 비교
 
 | 항목 | 단일 HP0 공유 | HP Port 분산 후 HP0 |
 |---|---:|---:|
@@ -380,6 +387,52 @@ HP Port 분산 후 1920×1080 30fps 영상 출력 정상화
 | 영상 출력 | 미출력 | 정상 |
 
 ---
+
+### 6.2 원본 영상과 처리 결과의 픽셀 정렬
+
+**문제**
+
+- 원본 RGB 영상과 영상처리 결과를 결합하는 과정에서 Pixel 위치 불일치 발생
+
+<p align="center">
+  <img src="docs/pixel_alignment_architecture.png" width="700">
+</p>
+
+**분석**
+
+- 원본 RGB 경로와 영상처리 경로 사이에 서로 다른 처리 지연 존재
+- 초기에는 Shift Register 기반 고정 지연으로 Pixel 위치 정렬
+- Vivado ILA에서 `TVALID / TREADY` 신호를 관측한 결과, AXI4-Stream Backpressure 발생 시 영상처리 경로에 추가적인 가변 지연이 발생함을 확인
+- Backpressure에 따른 가변 지연을 처리하기 위해 고정 Delay 방식 대신 버퍼링 구조가 필요하다고 판단
+
+**해결**
+
+- 원본 RGB 경로의 Shift Register 기반 고정 지연 구조를 AXIS FIFO 기반 버퍼링 구조로 변경
+- Overlay 단계에서 두 입력의 `TVALID / TREADY` 상태를 고려해 데이터 전달
+- Backpressure 발생 시 FIFO를 통해 원본 Pixel의 전달 시점 제어
+
+**결과**
+
+- Backpressure 발생 상황에서도 원본 영상과 영상처리 결과의 Pixel Sequence 정렬 유지
+
+---
+
+### 6.3 Morphology 경계 처리
+
+**문제**
+
+- 3×3 Morphology 연산 시 영상 가장자리에서 일부 이웃 Pixel 부재
+- 경계 Pixel을 제외하면 출력 영상 크기가 입력보다 작아짐
+
+**해결**
+
+- 영상 외부 Pixel 값을 `0`으로 처리하는 Zero Padding 적용
+- 영상 경계에서도 3×3 Window 연산 수행
+- 입력과 동일한 출력 해상도 유지
+
+<p align="center">
+  <img src="docs/morphology_zero_padding.png" width="300">
+</p>
 
 ### 6.2 원본 영상과 처리 결과의 픽셀 정렬
 
