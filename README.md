@@ -3,22 +3,17 @@
 Zynq-7000 FPGA 기반 **3-Frame Difference 실시간 움직임 영역 검출 시스템**
 
 Digilent Pcam 5C Demo의 카메라 입력 및 기본 Video I/O 구조를 기반으로,
-**AXI4-Stream 기반 영상처리 RTL과 3개의 VDMA MM2S Read Channel을 이용한 3-Frame 처리 구조를 구성하고**
+AXI4-Stream 영상처리 RTL과 3개의 VDMA MM2S Read Channel을 이용한 3-Frame 처리 구조를 구성하고
 1920×1080 30fps 영상에서 움직임 영역을 검출하여 Bounding Box로 출력했습니다.
 
 ### 주요 구현 및 성과
 
 - AXI4-Stream 기반 3-Frame Difference 영상처리 RTL 설계
-- 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조 구성
-- AXI4-Lite 기반 ROI Control Interface 구성
-- PS Software 기반 VDMA 프레임 동기화 검증
-- Vivado ILA 기반 데이터 흐름 및 Backpressure 분석
+- 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조
 - AXIS FIFO 기반 원본 영상과 처리 결과의 픽셀 정렬
-- 단일 HP0 공유에 따른 VDMA Read 데이터 전송 병목 분석
 - VDMA Read Channel의 HP Port 분산
-- HP Read Data Handshake 기반 실제 전송 대역폭 측정
-- **1920×1080 30fps 실시간 영상 처리**
-- **150 MHz 환경에서 Custom RTL 타이밍 검증**
+- 1920×1080 30fps 실시간 영상 처리
+- 150 MHz 환경에서 Custom RTL 타이밍 검증
 
 ---
 
@@ -31,7 +26,7 @@ Digilent Pcam 5C Demo의 카메라 입력 및 기본 Video I/O 구조를 기반�
 | 카메라 | Digilent Pcam 5C |
 | HDL | Verilog HDL |
 | PS 소프트웨어 | C |
-| 개발 도구 | Vivado / Vitis 2020.1 |
+| 개발 환경 | Vivado / Vitis 2020.1 |
 | 주요 인터페이스 / IP | AXI4-Stream, AXI4-Lite, AXI VDMA |
 | 카메라 입력 | 1920×1080 30fps |
 | 디스플레이 출력 | 1920×1080 60Hz |
@@ -50,26 +45,20 @@ Pcam 5C Demo의 카메라 입력과 기본 Video I/O 구조를 활용하고,
 
 ### 직접 설계 및 구성
 
-- AXI4-Stream 기반 영상처리 RTL
-- RGB to Gray, Frame Difference, Threshold
-- 3×3 Morphology
-- Bounding Box 계산 및 Overlay
+- 3-Frame Difference 기반 AXI4-Stream 영상처리 RTL
+- 3×3 Morphology 및 Bounding Box Overlay
 - AXI4-Lite 기반 ROI Control Interface
 - 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조
-- VDMA의 Frame Delay / Genlock을 활용한 프레임 동기화 구성
-- PS Software 기반 VDMA 프레임 동기화 검증
+- Frame Delay / Genlock 기반 프레임 동기화
 - AXIS FIFO 기반 픽셀 정렬
 - VDMA Read Channel의 HP Port 분산
-- Vivado ILA 기반 데이터 흐름 및 Backpressure 분석
-- HP Read Data 전송 대역폭 측정
-- STA 기반 Custom RTL 타이밍 검증
 
 ### PS / PL 역할
 
 | 영역 | 역할 |
 |---|---|
-| **PS** | Pcam Demo 제공 SW 기반 Camera 초기화, VDMA 설정, Frame Delay / Genlock 설정, ROI 제어, VDMA 프레임 동기화 검증 |
-| **PL** | AXI4-Stream 기반 영상처리 RTL, 3-Frame Difference, Morphology, Bounding Box, Overlay |
+| PS | Pcam Demo 제공 SW 기반 Camera 초기화, VDMA 설정, Frame Delay / Genlock 설정, ROI 제어 |
+| PL | AXI4-Stream 기반 영상처리 RTL, 3-Frame Difference, Morphology, Bounding Box, Overlay |
 
 ---
 
@@ -159,7 +148,7 @@ Overlay
 ## 5. Latency / Throughput
 
 정상적인 `TVALID / TREADY` Handshake 상태에서
-영상처리 파이프라인은 **1 pixel/clk**로 데이터를 처리하도록 설계했습니다.
+영상처리 파이프라인은 1 pixel/clk로 데이터를 처리하도록 설계했습니다.
 
 | IP | 기능 | Latency | Throughput |
 |---|---|---:|---:|
@@ -170,20 +159,265 @@ Overlay
 | Morphology | 3×3 Erosion → Dilation | 7 clk | 1 pixel/clk |
 | Box Calculation | ROI 내부 Bounding Box 좌표 계산 | 2 clk | 1 pixel/clk |
 | Overlay | 원본 RGB에 Bounding Box 표시 | 1 clk | 1 pixel/clk |
-| **Total** |  | **14 clk** | **1 pixel/clk** |
+| Total |  | 14 clk | 1 pixel/clk |
 
 ### 성능 결과
 
 | 항목 | 결과 |
 |---|---:|
-| Custom RTL 클럭 | **150 MHz** |
-| 파이프라인 Latency | **14 clk / 93.3 ns** |
-| Throughput | **1 pixel/clk** |
-| 영상 출력 | **1920×1080 30fps** |
+| Custom RTL 클럭 | 150 MHz |
+| 파이프라인 Latency | 14 clk / 93.3 ns |
+| Throughput | 1 pixel/clk |
+| 영상 출력 | 1920×1080 30fps |
 
 ---
 
-## 6. 시스템 검증
+## 6. 트러블슈팅
+
+### 6.1 단일 HP0 공유에 따른 메모리 대역폭 병목
+
+#### 문제 및 데이터 흐름 점검
+
+2-Frame에서 3-Frame 처리 구조로 확장하면서
+VDMA MM2S Read Channel을 2개에서 3개로 늘렸습니다.
+
+초기에는 세 Read Channel을 하나의 AXI Interconnect를 통해 HP0에 연결했으나,
+영상이 정상적으로 출력되지 않았습니다.
+
+```text
+VDMA0 Read ─┐
+VDMA1 Read ─┼─ AXI Interconnect ─ HP0 ─ DDR
+VDMA2 Read ─┘
+```
+
+Vivado ILA로 영상처리 Pipeline을 단계적으로 확인한 결과,
+여러 AXI4-Stream 구간에서 데이터 전송 공백을 확인했습니다.
+
+아래는 Overlay 입력에서 관측한 대표 파형입니다.
+
+<p align="center">
+  <img src="docs/axis_handshake_with_stall.png" width="800">
+</p>
+
+#### 요구 대역폭 분석
+
+디스플레이 출력: 1920×1080 60Hz, RGB888
+
+```text
+1개의 Read Channel 요구 대역폭
+= 1920 × 1080 × 60 × 3 Byte
+= 373.248 MB/s
+
+3개의 Read Channel 요구 대역폭
+= 373.248 × 3
+= 1,119.744 MB/s
+
+HP Port 이론 대역폭
+= 150 MHz × 8 Byte
+= 1,200 MB/s
+
+HP Port 이론 대역폭 대비 요구량
+= 1,119.744 / 1,200 × 100
+= 93.312%
+```
+
+세 Read Channel의 합산 요구량이 단일 HP Port 이론 대역폭의 약 93.3%를 차지해,
+대역폭 여유가 크지 않은 구조임을 확인했습니다.
+
+#### HP0 실제 전송 대역폭 측정
+
+**측정 방법**
+
+HP0 Read Data Channel의 `RVALID`, `RREADY`를 RTL Counter에 연결하고,
+`RVALID && RREADY`가 성립한 Cycle을 1초 동안 Count했습니다.
+
+64-bit Data Width를 기준으로 Handshake 1회당 8 Byte로 계산했습니다.
+
+| 신호 | 의미 |
+|---|---|
+| `RVALID` | 유효한 Read Data 전달 |
+| `RREADY` | Read Data 수신 가능 |
+| `RVALID && RREADY` | 실제 Read Data 전송 |
+| `start` | 측정 시작 |
+| `done` | 측정 완료 |
+| `handshake_count` | 1초 동안 발생한 Read Data 전송 횟수 |
+
+**측정 결과**
+
+```text
+handshake_count = 138,561,478
+```
+
+<p align="center">
+  <img src="docs/before_hp_split_measurement_setup.png" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/before_hp_split_vio.png" width="850">
+</p>
+
+**측정 결과 분석**
+
+실제 전송률
+
+```text
+138,561,478 / 150,000,000 × 100
+= 92.374%
+```
+
+실제 전송 대역폭
+
+```text
+138,561,478 × 8 Byte
+= 1,108.492 MB/s
+```
+
+3개의 VDMA Read Channel 요구 대역폭
+
+```text
+요구 대역폭 : 1,119.744 MB/s
+측정 대역폭 : 1,108.492 MB/s
+차이        :    11.252 MB/s
+```
+
+3개의 Read Channel이 요구하는 1,119.744 MB/s에 비해
+실제 측정 대역폭은 1,108.492 MB/s로 약 11.25 MB/s 부족했습니다.
+
+ILA에서 확인한 AXI4-Stream 전송 공백과 전송 대역폭 측정 결과를 바탕으로,
+세 Read Channel이 단일 HP0를 공유하면서 메모리 대역폭 병목이 발생한 것으로 판단했습니다.
+
+#### HP Port 분산
+
+세 VDMA Read Channel을 서로 다른 HP Port로 분산했습니다.
+
+```text
+VDMA0 Read  ─ HP0
+VDMA1 Read  ─ HP1
+VDMA2 Read  ─ HP3
+
+VDMA0 Write ─ HP2
+```
+
+#### HP Port 분산 후 전송 대역폭 측정
+
+**측정 방법**
+
+HP0에 연결된 VDMA0 Read Channel을
+분리 전과 동일한 방법으로 1초 동안 측정했습니다.
+
+**측정 결과**
+
+```text
+handshake_count = 46,656,000
+```
+
+<p align="center">
+  <img src="docs/after_hp_split_measurement_setup.png" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/after_hp_split_vio.png" width="850">
+</p>
+
+**측정 결과 분석**
+
+실제 전송률
+
+```text
+46,656,000 / 150,000,000 × 100
+= 31.104%
+```
+
+실제 전송 대역폭
+
+```text
+46,656,000 × 8 Byte
+= 373.248 MB/s
+```
+
+1개의 VDMA Read Channel 요구 대역폭
+
+```text
+요구 대역폭 : 373.248 MB/s
+측정 대역폭 : 373.248 MB/s
+```
+
+분산 후 HP0의 실제 전송 대역폭은
+VDMA0 Read Channel의 요구 대역폭과 일치했습니다.
+
+#### AXI4-Stream 전송 결과
+
+HP Port 분산 후 1920×1080 30fps 영상 출력 정상화
+
+동일한 Overlay 입력에서 캡처한 1,024 Cycle 구간에서
+연속적인 AXI4-Stream Handshake 확인
+
+<p align="center">
+  <img src="docs/axis_handshake_continuous.png" width="800">
+</p>
+
+#### 구성별 비교
+
+| 항목 | 단일 HP0 공유 | HP Port 분산 후 HP0 |
+|---|---:|---:|
+| 관측 대상 | VDMA Read 3개 | VDMA0 Read 1개 |
+| 요구 대역폭 | 1.120 GB/s | 0.373 GB/s |
+| 실제 전송 대역폭 | 1.108 GB/s | 0.373 GB/s |
+| 실제 전송률 | 92.374% | 31.104% |
+| AXI4-Stream | 전송 공백 발생 | 연속 전송 확인 |
+| 영상 출력 | 미출력 | 정상 |
+
+---
+
+### 6.2 원본 영상과 처리 결과의 픽셀 정렬
+
+**문제**
+
+- 원본 RGB 영상과 영상처리 결과를 결합하는 과정에서 Pixel 위치 불일치 발생
+
+<p align="center">
+  <img src="docs/pixel_alignment_architecture.png" width="700">
+</p>
+
+**분석**
+
+- 원본 RGB 경로와 영상처리 경로 사이에 서로 다른 처리 지연 존재
+- 초기에는 Shift Register 기반 고정 지연으로 Pixel 위치 정렬
+- Vivado ILA에서 `TVALID / TREADY` 신호를 관측한 결과, AXI4-Stream Backpressure 발생 시 영상처리 경로에 추가적인 가변 지연이 발생함을 확인
+- Backpressure에 따른 가변 지연을 처리하기 위해 고정 Delay 방식 대신 버퍼링 구조가 필요하다고 판단
+
+**해결**
+
+- 원본 RGB 경로의 Shift Register 기반 고정 지연 구조를 AXIS FIFO 기반 버퍼링 구조로 변경
+- Overlay 단계에서 두 입력의 `TVALID / TREADY` 상태를 고려해 데이터 전달
+- Backpressure 발생 시 FIFO를 통해 원본 Pixel의 전달 시점 제어
+
+**결과**
+
+- Backpressure 발생 상황에서도 원본 영상과 영상처리 결과의 Pixel Sequence 정렬 유지
+
+---
+
+### 6.3 Morphology 경계 처리
+
+**문제**
+
+- 3×3 Morphology 연산 시 영상 가장자리에서 일부 이웃 Pixel 부재
+- 경계 Pixel을 제외하면 출력 영상 크기가 입력보다 작아짐
+
+**해결**
+
+- 영상 외부 Pixel 값을 `0`으로 처리하는 Zero Padding 적용
+- 영상 경계에서도 3×3 Window 연산 수행
+- 입력과 동일한 출력 해상도 유지
+
+<p align="center">
+  <img src="docs/morphology_zero_padding.png" width="300">
+</p>
+
+---
+
+## 7. 시스템 검증
 
 ### 시스템 통합 및 AXI4-Stream 검증
 
@@ -216,258 +450,6 @@ PS Software를 통해 각 VDMA의 프레임 동작 상태를 확인하고,
 
 ---
 
-## 7. 트러블슈팅
-
-### 7.1 단일 HP 포트 공유로 인한 메모리 대역폭 병목
-
-#### 문제 및 데이터 흐름 점검
-
-2-Frame에서 3-Frame 처리 구조로 확장하면서
-VDMA MM2S Read Channel을 2개에서 3개로 늘렸습니다.
-
-초기에는 세 Read Channel을 하나의 AXI Interconnect를 통해 HP0에 연결했으나,
-영상이 정상적으로 출력되지 않았습니다.
-
-```text
-VDMA0 Read ─┐
-VDMA1 Read ─┼─ AXI Interconnect ─ HP0 ─ DDR
-VDMA2 Read ─┘
-```
-
-Vivado ILA로 영상처리 Pipeline을 단계적으로 확인한 결과,
-여러 AXI4-Stream 구간에서 데이터 전송 공백을 확인했습니다.
-
-아래는 Overlay 입력에서 관측한 대표 파형입니다.
-
-<p align="center">
-  <img src="docs/axis_handshake_with_stall.png" width="800">
-</p>
-
----
-
-#### 요구 대역폭 분석
-
-**디스플레이 출력: 1920×1080 60Hz, RGB888**
-
-```text
-1개의 Read Channel 요구 대역폭
-= 1920 × 1080 × 60 × 3 Byte
-= 373.248 MB/s
-
-3개의 Read Channel 요구 대역폭
-= 373.248 × 3
-= 1,119.744 MB/s
-
-HP Port 이론 대역폭
-= 150 MHz × 8 Byte
-= 1,200 MB/s
-
-HP Port 이론 대역폭 대비 요구량
-= 1,119.744 / 1,200 × 100
-= 93.312%
-```
-
-세 Read Channel의 합산 요구량이 단일 HP Port 이론 대역폭의 약 93.3%를 차지해,
-대역폭 여유가 크지 않은 구조임을 확인했습니다.
-
----
-
-#### HP0 실제 전송 대역폭 측정
-
-실제 전송량을 확인하기 위해 HP0 Read Data Channel의
-`RVALID`, `RREADY`를 RTL Counter에 연결했습니다.
-
-`RVALID && RREADY`가 성립한 Cycle을 1초 동안 Count하고,
-64-bit Data Width를 기준으로 실제 전송 대역폭을 계산했습니다.
-
-| 신호 | 의미 |
-|---|---|
-| `RVALID` | 유효한 Read Data 전달 |
-| `RREADY` | Read Data 수신 가능 |
-| `RVALID && RREADY` | 실제 Read Data 전송 |
-| `start` | 측정 시작 |
-| `done` | 측정 완료 |
-| `handshake_count` | 1초 동안 발생한 Read Data 전송 횟수 |
-
-##### 측정 구성
-
-<p align="center">
-  <img src="docs/before_hp_split_measurement_setup.png" width="900">
-</p>
-
-##### 측정 결과
-
-```text
-handshake_count = 138,561,478
-```
-
-**실제 전송률**
-
-```text
-138,561,478 / 150,000,000 × 100
-= 92.374%
-```
-
-**실제 전송 대역폭**
-
-```text
-138,561,478 × 8 Byte
-= 1,108.492 MB/s
-```
-
-**3개의 VDMA Read Channel 요구 대역폭**
-
-```text
-요구 대역폭 : 1,119.744 MB/s
-측정 대역폭 : 1,108.492 MB/s
-차이        :    11.252 MB/s
-```
-
-<p align="center">
-  <img src="docs/before_hp_split_vio.png" width="850">
-</p>
-
-3개의 Read Channel이 요구하는 1,119.744 MB/s에 비해
-실제 측정 대역폭은 1,108.492 MB/s로 약 11.25 MB/s 부족했습니다.
-
-ILA에서 확인한 AXI4-Stream 전송 공백과 대역폭 측정 결과를 바탕으로,
-세 Read Channel이 단일 HP0를 공유하면서 발생한 **메모리 대역폭 병목**으로 판단했습니다.
-
----
-
-#### HP Port 분산
-
-세 VDMA Read Channel을 서로 다른 HP Port로 분산했습니다.
-
-```text
-VDMA0 Read  ─ HP0
-VDMA1 Read  ─ HP1
-VDMA2 Read  ─ HP3
-
-VDMA0 Write ─ HP2
-```
-
----
-
-#### HP Port 분산 후 전송 대역폭 측정
-
-포트 분산 후 HP0에 연결된 VDMA0 Read Channel을
-동일한 방법으로 측정했습니다.
-
-##### 측정 구성
-
-<p align="center">
-  <img src="docs/after_hp_split_measurement_setup.png" width="900">
-</p>
-
-##### 측정 결과
-
-```text
-handshake_count = 46,656,000
-```
-
-**실제 전송률**
-
-```text
-46,656,000 / 150,000,000 × 100
-= 31.104%
-```
-
-**실제 전송 대역폭**
-
-```text
-46,656,000 × 8 Byte
-= 373.248 MB/s
-```
-
-**1개의 VDMA Read Channel 요구 대역폭**
-
-```text
-요구 대역폭 : 373.248 MB/s
-측정 대역폭 : 373.248 MB/s
-```
-
-<p align="center">
-  <img src="docs/after_hp_split_vio.png" width="850">
-</p>
-
-분산 후 HP0에서 측정된 373.248 MB/s는
-VDMA0 Read Channel의 요구 대역폭과 일치했습니다.
-
----
-
-#### AXI4-Stream 전송 결과
-
-HP Port 분산 후 **1920×1080 30fps 영상 출력 정상화**
-
-동일한 Overlay 입력에서 캡처한 1,024 Cycle 구간에서
-연속적인 AXI4-Stream Handshake 확인
-
-<p align="center">
-  <img src="docs/axis_handshake_continuous.png" width="800">
-</p>
-
----
-
-#### 구성별 비교
-
-| 항목 | 단일 HP0 공유 | HP Port 분산 후 HP0 |
-|---|---:|---:|
-| 관측 대상 | VDMA Read 3개 | VDMA0 Read 1개 |
-| 요구 대역폭 | 1.120 GB/s | 0.373 GB/s |
-| 실제 전송 대역폭 | 1.108 GB/s | 0.373 GB/s |
-| 실제 전송률 | 92.374% | 31.104% |
-| AXI4-Stream | 전송 공백 발생 | 연속 전송 확인 |
-| 영상 출력 | 미출력 | 정상 |
-
-### 7.2 원본 영상과 처리 결과의 픽셀 정렬
-
-**문제**
-
-- 원본 RGB 영상과 영상처리 결과를 결합하는 과정에서 Pixel 위치 불일치 발생
-
-<p align="center">
-  <img src="docs/pixel_alignment_architecture.png" width="700">
-</p>
-
-**분석**
-
-- 원본 RGB 경로와 영상처리 경로 사이에 서로 다른 처리 지연 존재
-- 초기에는 Shift Register 기반 **고정 지연**으로 Pixel 위치 정렬
-- Vivado ILA에서 `TVALID / TREADY` 신호를 관측한 결과, AXI4-Stream Backpressure 발생 시 영상처리 경로에 추가적인 **가변 지연**이 발생함을 확인
-- Backpressure에 따른 가변 지연을 처리하기 위해 **고정 Delay 방식 대신 버퍼링 구조가 필요하다고 판단**
-
-**해결**
-
-- 원본 RGB 경로의 Shift Register 기반 고정 지연 구조를 **AXIS FIFO 기반 버퍼링 구조로 변경**
-- Overlay 단계에서 두 입력의 `TVALID / TREADY` 상태를 고려해 데이터 전달
-- Backpressure 발생 시 FIFO를 통해 원본 Pixel의 전달 시점 제어
-
-**결과**
-
-- Backpressure 발생 상황에서도 원본 영상과 영상처리 결과의 **Pixel Sequence 정렬 유지**
-
----
-
-### 7.3 Morphology 경계 처리
-
-**문제**
-
-- 3×3 Morphology 연산 시 영상 가장자리에서 일부 이웃 Pixel 부재
-- 경계 Pixel을 제외하면 출력 영상 크기가 입력보다 작아짐
-
-**해결**
-
-- 영상 외부 Pixel 값을 `0`으로 처리하는 **Zero Padding 적용**
-- 영상 경계에서도 3×3 Window 연산 수행
-- 입력과 동일한 출력 해상도 유지
-
-<p align="center">
-  <img src="docs/morphology_zero_padding.png" width="300">
-</p>
-
----
-
 ## 8. 타이밍 / 자원 사용량
 
 <p align="center">
@@ -495,17 +477,11 @@ HP Port 분산 후 **1920×1080 30fps 영상 출력 정상화**
 
 ## 9. 최종 결과
 
-- AXI4-Stream 기반 3-Frame Difference 영상처리 RTL 설계
-- 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 구조 구성
-- PS Software 기반 VDMA 프레임 동기화 검증
-- Backpressure 분석 및 AXIS FIFO 기반 픽셀 정렬
-- 단일 HP0 공유 구조의 VDMA Read 데이터 전송 병목 분석
-- VDMA Read Channel의 HP Port 분산
-- 단일 HP0에서 3개의 Read Channel 요구 대역폭 약 **1.120 GB/s**
-- 단일 HP0의 실제 Read 전송 대역폭 약 **1.108 GB/s 측정**
-- HP Port 분산 후 VDMA0 Read 요구 대역폭 **373.248 MB/s 공급 확인**
-- **1920×1080 30fps 실시간 Motion Detection**
+- 3-Frame Difference 기반 실시간 움직임 검출 RTL 구현
+- 3개의 VDMA MM2S Read Channel 기반 3-Frame 처리 및 프레임 동기화
+- AXIS FIFO 기반 원본 영상과 처리 결과의 픽셀 정렬
+- HP Port 분산을 통한 메모리 대역폭 병목 완화 및 영상 출력 정상화
 - Custom RTL 150 MHz 타이밍 검증
-- 움직임 영역 Bounding Box 실시간 출력
+- 1920×1080 30fps Motion Detection 및 Bounding Box 실시간 출력
 
 https://github.com/user-attachments/assets/9a3a67aa-2736-4b05-ba71-554f5b7c8f1a
